@@ -1,0 +1,76 @@
+#!/bin/bash
+
+#####
+#
+# Builder
+# 
+# Docker based cross compilation tool
+#
+#####
+
+IMAGE="${USER}/$2"
+TAG="v1"
+VOLUME="$(pwd)"
+VOLUME_MOUNTPOINT="/tmp/bob"
+
+FUNCTION="$1"
+shift 2;
+BOB_ARGUMENTS=($@)
+
+if [ -f "$(pwd)/.environment" ]; then
+	ENV="--env-file $(pwd)/.environment"
+	echo "Using ${ENV}"
+else
+	echo "Environment file not found!"
+	ENV=(	--env PATH="/opt/arm-toolchain/linaro/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+		--env ARCH="arm" \
+		--env CROSS_COMPILE="arm-linux-gnueabihf-" )
+		
+fi
+
+# creates a container based on an input directory and image name
+function container_build {
+	echo "Building image: ${IMAGE}:${TAG}"
+	docker build -t "${IMAGE}:${TAG}" ${BOB_ARGUMENTS}
+}
+
+# launches a docker container.
+# if extra commands are specified it launches them, otherwise it starts up bash
+function container_launch {
+	FOLDER="${BOB_ARGUMENTS[0]}"
+	echo "Launching in ${FOLDER}"
+	BOB_ARGUMENTS=("${BOB_ARGUMENTS[*]:1}")
+	echo "Args: ${BOB_ARGUMENTS}"
+	if [ -n "${BOB_ARGUMENTS}" ]; then
+		A_VOLUME="${VOLUME}:${VOLUME_MOUNTPOINT}"
+		A_WORKDIR="${VOLUME_MOUNTPOINT}/${FOLDER}/"
+		echo "Running in folder: ${A_WORKDIR}"
+		shift
+		echo "Running image: ${IMAGE}:${TAG}"
+		echo "Arguments: ${BOB_ARGUMENTS}"
+		echo "Environment: ${ENV[*]}"
+		echo "Volume: ${VOLUME}"
+		docker run -t -i \
+			${ENV[*]} \
+			--workdir="${A_WORKDIR}" \
+			--volume="${A_VOLUME}" \
+			--user=${USER}:${USER} \
+			"${IMAGE}:${TAG}" \
+			"${BOB_ARGUMENTS}"
+	else
+		docker run -t -i \
+			--workdir="${VOLUME_MOUNTPOINT}/${FOLDER}" \
+			--volume="${VOLUME}:${VOLUME_MOUNTPOINT}" \
+			--user=${USER}:${USER} \
+			"${IMAGE}:${TAG}"
+	fi
+}
+
+case "$FUNCTION" in
+	setup) container_build
+		;;
+	build) container_launch
+		;;
+	*)	echo "Unrecognized option: ${FUNCTION}"
+		;;
+esac
