@@ -39,7 +39,7 @@ function container_build {
 function container_launch {
 	FOLDER="${BOB_ARGUMENTS[0]}"
 	echo "Launching in ${FOLDER}"
-	BOB_ARGUMENTS=("${BOB_ARGUMENTS[*]:1}")
+	BOB_ARGUMENTS=(${BOB_ARGUMENTS[*]:1})
 	echo "Args: ${BOB_ARGUMENTS}"
 	if [ -n "${BOB_ARGUMENTS}" ]; then
 		A_VOLUME="${VOLUME}:${VOLUME_MOUNTPOINT}"
@@ -47,7 +47,7 @@ function container_launch {
 		echo "Running in folder: ${A_WORKDIR}"
 		shift
 		echo "Running image: ${IMAGE}:${TAG}"
-		echo "Arguments: ${BOB_ARGUMENTS}"
+		echo "Arguments: ${BOB_ARGUMENTS[*]}"
 		echo "Environment: ${ENV[*]}"
 		echo "Volume: ${VOLUME}"
 		docker run -t -i \
@@ -56,7 +56,7 @@ function container_launch {
 			--volume="${A_VOLUME}" \
 			--user=${USER}:${USER} \
 			"${IMAGE}:${TAG}" \
-			"${BOB_ARGUMENTS}"
+			${BOB_ARGUMENTS[*]}
 	else
 		docker run -t -i \
 			--workdir="${VOLUME_MOUNTPOINT}/${FOLDER}" \
