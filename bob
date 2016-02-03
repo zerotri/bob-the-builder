@@ -8,6 +8,43 @@
 #
 #####
 
+
+## start utils
+
+red=`tput setaf 1`
+green=`tput setaf 2`
+yellow=`tput setaf 3`
+blue=`tput setaf 4`
+magenta=`tput setaf 5`
+cyan=`tput setaf 6`
+white=`tput setaf 7`
+reset=`tput sgr0`
+
+error()
+{
+  # was an error passed to this function?
+  if [ -z "$1" ]; then
+    #if not, print a standard error
+    echo "[${red}DEBUG ${yellow}@ ${green}$(date +"%T")${reset}] ${red}Error occurred!${reset}"
+  else
+    # if so, we can print the message in an error
+    echo "[${red}DEBUG ${yellow}@ ${green}$(date +"%T")${reset}] ${red}$@${reset}"
+  fi
+  exit 1
+}
+
+# log function
+function log {
+  echo "[${cyan}INFO  ${yellow}@ ${green}$(date +"%T")${reset}] $@"
+}
+
+# marker function
+function marker {
+  log "${yellow}===== ${blue}$@ ${yellow}=====${reset}"
+}
+
+## end utils
+
 IMAGE="${USER}/$2"
 TAG="v1"
 VOLUME="$(pwd)"
@@ -19,9 +56,9 @@ BOB_ARGUMENTS=($@)
 
 if [ -f "$(pwd)/.environment" ]; then
 	ENV="--env-file $(pwd)/.environment"
-	echo "Using ${ENV}"
+	log "Using ${ENV}"
 else
-	echo "Environment file not found!"
+	log "Environment file not found!"
 	ENV=(	--env PATH="/opt/arm-toolchain/linaro/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
 		--env ARCH="arm" \
 		--env CROSS_COMPILE="arm-linux-gnueabihf-"
@@ -31,7 +68,7 @@ fi
 
 # creates a container based on an input directory and image name
 function container_build {
-	echo "Building image: ${IMAGE}:${TAG}"
+	log "Building image: ${IMAGE}:${TAG}"
 	docker build -t "${IMAGE}:${TAG}" ${BOB_ARGUMENTS}
 }
 
@@ -39,18 +76,19 @@ function container_build {
 # if extra commands are specified it launches them, otherwise it starts up bash
 function container_launch {
 	FOLDER="${BOB_ARGUMENTS[0]}"
-	echo "Launching in ${FOLDER}"
+	log "Launching in ${FOLDER}"
 	BOB_ARGUMENTS=(${BOB_ARGUMENTS[*]:1})
-	echo "Args: ${BOB_ARGUMENTS}"
+	log "Args: ${BOB_ARGUMENTS}"
 	if [ -n "${BOB_ARGUMENTS}" ]; then
 		A_VOLUME="${VOLUME}:${VOLUME_MOUNTPOINT}"
 		A_WORKDIR="${VOLUME_MOUNTPOINT}/${FOLDER}/"
-		echo "Running in folder: ${A_WORKDIR}"
+		log "Running in folder: ${A_WORKDIR}"
 		shift
-		echo "Running image: ${IMAGE}:${TAG}"
-		echo "Arguments: ${BOB_ARGUMENTS[*]}"
-		echo "Environment: ${ENV[*]}"
-		echo "Volume: ${VOLUME}"
+		log "Running image: ${IMAGE}:${TAG}"
+		log "Arguments: ${BOB_ARGUMENTS[*]}"
+		log "Environment: ${ENV[*]}"
+		log "Volume: ${VOLUME}"
+		marker "${IMAGE}"
 		docker run -t -i \
 			${ENV[*]} \
 			--workdir="${A_WORKDIR}" \
@@ -71,7 +109,7 @@ function container_launch {
 case "$FUNCTION" in
 	create) container_build
 		;;
-	build) container_launch
+	run) container_launch
 		;;
 	*)	echo "Unrecognized option: ${FUNCTION}"
 		;;
