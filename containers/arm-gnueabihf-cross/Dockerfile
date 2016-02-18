@@ -32,6 +32,8 @@ RUN apt-get -y install unzip
 RUN apt-get -y install bison
 RUN apt-get -y install flex
 RUN apt-get -y install lzop
+RUN apt-get -y install mercurial
+RUN apt-get -y install device-tree-compiler
 
 RUN groupadd -r --gid=1000 zerotri
 RUN useradd -r --uid=1000 --gid=zerotri zerotri

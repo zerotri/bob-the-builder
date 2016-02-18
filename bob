@@ -69,7 +69,7 @@ fi
 # creates a container based on an input directory and image name
 function container_build {
 	log "Building image: ${IMAGE}:${TAG}"
-	docker build -t "${IMAGE}:${TAG}" ${BOB_ARGUMENTS}
+	docker build  -t "${IMAGE}:${TAG}" ${BOB_ARGUMENTS}
 }
 
 # launches a docker container.

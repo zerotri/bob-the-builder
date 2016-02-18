@@ -1,0 +1,9 @@
+PATH=/opt/arm-toolchain/linaro/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ARCH=arm
+CROSS_COMPILE=arm-linux-gnueabihf-
+KBUILD_DEBARCH=armhf
+KDEB_CHANGELOG_DIST=jessie
+LOCALVERSION=-zerotri
+KDEB_PKGVERSION=4.3.0-zerotri
+DEBFULLNAME="Wynter Woods"
+DEBEMAIL="zerotri@gmail.com"
