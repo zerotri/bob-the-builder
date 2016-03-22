@@ -51,6 +51,10 @@ VOLUME="$(pwd)"
 VOLUME_MOUNTPOINT="/tmp/bob"
 
 FUNCTION="$1"
+if [ "$3" == "--no-cache" ]; then
+	NO_CACHE="--no-cache"
+	shift 1;
+fi
 shift 2;
 BOB_ARGUMENTS=($@)
 
@@ -69,7 +73,7 @@ fi
 # creates a container based on an input directory and image name
 function container_build {
 	log "Building image: ${IMAGE}:${TAG}"
-	docker build  -t "${IMAGE}:${TAG}" ${BOB_ARGUMENTS}
+	docker build ${NO_CACHE} -t "${IMAGE}:${TAG}" ${BOB_ARGUMENTS}
 }
 
 # launches a docker container.
@@ -93,7 +97,6 @@ function container_launch {
 			${ENV[*]} \
 			--workdir="${A_WORKDIR}" \
 			--volume="${A_VOLUME}" \
-			--user=${USER}:${USER} \
 			"${IMAGE}:${TAG}" \
 			${BOB_ARGUMENTS[*]}
 	else
@@ -101,10 +104,10 @@ function container_launch {
 			${ENV[*]} \
 			--workdir="${VOLUME_MOUNTPOINT}/${FOLDER}" \
 			--volume="${VOLUME}:${VOLUME_MOUNTPOINT}" \
-			--user=${USER}:${USER} \
 			"${IMAGE}:${TAG}"
 	fi
 }
+#			\ # --user=${USER}:${USER} \
 
 case "$FUNCTION" in
 	create) container_build

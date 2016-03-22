@@ -3,7 +3,7 @@
 # platform from Ubuntu
 ##################################################
 
-FROM ubuntu:trusty
+FROM ubuntu:wily
 MAINTAINER Wynter Woods
 RUN apt-get update
 RUN apt-get upgrade -y
@@ -31,31 +31,20 @@ RUN apt-get -y install bc
 RUN apt-get -y install unzip
 RUN apt-get -y install bison
 RUN apt-get -y install flex
-RUN apt-get -y install lzop
+RUN apt-get -y install lzop 
 RUN apt-get -y install mercurial
 RUN apt-get -y install device-tree-compiler
-RUN apt-get -y install fakeroot libfakeroot
-RUN apt-get -y install debhelper dkms
-RUN apt-get -y install devscripts
-RUN apt-get -y install module-assistant
-# RUN apt-get -y install libdrm-dev
-# RUN apt-get -y install libudev-dev
-# RUN apt-get -y install libxext-dev
-RUN apt-get -y install pkg-config
-# RUN apt-get -y install x11proto-core-dev
-# RUN apt-get -y install x11proto-fonts-dev
-# RUN apt-get -y install x11proto-gl-dev
-# RUN apt-get -y install x11proto-xf86dri-dev
-# RUN apt-get -y install xutils-dev
-# RUN apt-get -y install xserver-xorg-dev
-RUN apt-get -y install quilt dh-autoreconf
-RUN apt-get -y install dh-make
+
+RUN groupadd -r --gid=1000 docker
+RUN useradd -r --uid=1000 --gid=docker docker
+
+RUN git -C /opt clone http://github.com/kaplan2539/chip-buildroot
 RUN apt-get -y install cpio
-# RUN apt-get -y install gcc-4.9
-# RUN apt-get -y remove gcc-5
-# RUN locale-gen --no-purge lang en_US.UTF-8
-RUN groupadd -r --gid=1000 zerotri
-RUN useradd -r --uid=1000 --gid=zerotri zerotri
 
+RUN make -C /opt/chip-buildroot chip_defconfig
+RUN make -C /opt/chip-buildroot
 
-# USER zerotri
+RUN chown -R docker:docker /opt
+
+USER docker
+VOLUME ["/var/lib"]
