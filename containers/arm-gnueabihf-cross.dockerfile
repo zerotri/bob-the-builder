@@ -57,5 +57,6 @@ RUN apt-get -y install cpio
 RUN groupadd -r --gid=1000 zerotri
 RUN useradd -r --uid=1000 --gid=zerotri zerotri
 
+RUN locale-gen en_US.UTF-8
 
 # USER zerotri

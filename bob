@@ -47,8 +47,6 @@ function marker {
 
 IMAGE="${USER}/$2"
 TAG="v1"
-VOLUME="$(pwd)"
-VOLUME_MOUNTPOINT="/tmp/bob"
 
 FUNCTION="$1"
 if [ "$3" == "--no-cache" ]; then
@@ -58,9 +56,10 @@ fi
 shift 2;
 BOB_ARGUMENTS=($@)
 
-if [ -f "$(pwd)/.environment" ]; then
-	ENV="--env-file $(pwd)/.environment"
-	log "Using ${ENV}"
+if [ -f "$(pwd)/.bobenv" ]; then
+	ENV="--env-file $(pwd)/.bobenv"
+elif [ -f "${HOME}/.bobenv" ]; then
+	ENV="--env-file ${HOME}/.bobenv"
 else
 	log "Environment file not found!"
 	ENV=(	--env PATH="/opt/arm-toolchain/linaro/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
@@ -73,25 +72,51 @@ fi
 # creates a container based on an input directory and image name
 function container_build {
 	log "Building image: ${IMAGE}:${TAG}"
+	if [ -f "${BOB_ARGUMENTS[0]}" ]; then
+		echo "${BOB_ARGUMENTS[0]} is a file"
+		BOB_ARGUMENTS="-f ${BOB_ARGUMENTS[0]} $(dirname ${BOB_ARGUMENTS[0]})"
+	elif [ -d "${BOB_ARGUMENTS[0]}" ]; then
+		BOB_ARGUMENTS="${BOB_ARGUMENTS[0]}"
+	else
+		echo "${BOB_ARGUMENTS[0]} is not a file or directory"
+		echo "exiting now."
+		exit 1
+	fi
 	docker build ${NO_CACHE} -t "${IMAGE}:${TAG}" ${BOB_ARGUMENTS}
+	
 }
 
 # launches a docker container.
 # if extra commands are specified it launches them, otherwise it starts up bash
 function container_launch {
-	FOLDER="${BOB_ARGUMENTS[0]}"
+	if [ "${BOB_ARGUMENTS[0]}" == "-d" ]; then
+		FOLDER="${BOB_ARGUMENTS[1]}"
+		if [[ "$FOLDER" != /* ]]; then
+			FOLDER="$(pwd)/${FOLDER}"
+		fi
+		BOB_ARGUMENTS=(${BOB_ARGUMENTS[*]:2})
+		echo "Using folder $FOLDER"
+	else
+		FOLDER="$(pwd)"
+		echo "Using folder $FOLDER"
+	fi
+
+	VOLUME="${FOLDER}"
+	VOLUME_MOUNTPOINT="/tmp/bob/${FOLDER##*/}"
+	# FOLDER="${BOB_ARGUMENTS[0]}"
 	log "Launching in ${FOLDER}"
-	BOB_ARGUMENTS=(${BOB_ARGUMENTS[*]:1})
+	log "Mount ${VOLUME_MOUNTPOINT}"
+	# BOB_ARGUMENTS=(${BOB_ARGUMENTS[*]:1})
 	log "Args: ${BOB_ARGUMENTS}"
 	if [ -n "${BOB_ARGUMENTS}" ]; then
 		A_VOLUME="${VOLUME}:${VOLUME_MOUNTPOINT}"
-		A_WORKDIR="${VOLUME_MOUNTPOINT}/${FOLDER}/"
-		log "Running in folder: ${A_WORKDIR}"
+		A_WORKDIR="${VOLUME_MOUNTPOINT}"
+		# log "Running in folder: ${A_WORKDIR}"
 		shift
-		log "Running image: ${IMAGE}:${TAG}"
-		log "Arguments: ${BOB_ARGUMENTS[*]}"
-		log "Environment: ${ENV[*]}"
-		log "Volume: ${VOLUME}"
+		# log "Running image: ${IMAGE}:${TAG}"
+		# log "Arguments: ${BOB_ARGUMENTS[*]}"
+		# log "Environment: ${ENV[*]}"
+		# log "Volume: ${VOLUME}"
 		marker "${IMAGE}"
 		docker run -t -i \
 			${ENV[*]} \
@@ -102,7 +127,7 @@ function container_launch {
 	else
 		docker run -t -i \
 			${ENV[*]} \
-			--workdir="${VOLUME_MOUNTPOINT}/${FOLDER}" \
+			--workdir="${A_WORKDIR}" \
 			--volume="${VOLUME}:${VOLUME_MOUNTPOINT}" \
 			"${IMAGE}:${TAG}"
 	fi
