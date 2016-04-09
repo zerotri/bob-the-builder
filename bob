@@ -91,8 +91,10 @@ function container_build {
 function container_launch {
 	if [ "${BOB_ARGUMENTS[0]}" == "-d" ]; then
 		FOLDER="${BOB_ARGUMENTS[1]}"
+		WORKDIR=""
 		if [[ "$FOLDER" != /* ]]; then
-			FOLDER="$(pwd)/${FOLDER}"
+			WORKDIR="${FOLDER}"
+			FOLDER="$(pwd)"
 		fi
 		BOB_ARGUMENTS=(${BOB_ARGUMENTS[*]:2})
 		echo "Using folder $FOLDER"
@@ -103,6 +105,7 @@ function container_launch {
 
 	VOLUME="${FOLDER}"
 	VOLUME_MOUNTPOINT="/tmp/bob/${FOLDER##*/}"
+	VOLUME_WORKDIR="${VOLUME_MOUNTPOINT}/${WORKDIR}"
 	# FOLDER="${BOB_ARGUMENTS[0]}"
 	log "Launching in ${FOLDER}"
 	log "Mount ${VOLUME_MOUNTPOINT}"
@@ -110,7 +113,7 @@ function container_launch {
 	log "Args: ${BOB_ARGUMENTS}"
 	if [ -n "${BOB_ARGUMENTS}" ]; then
 		A_VOLUME="${VOLUME}:${VOLUME_MOUNTPOINT}"
-		A_WORKDIR="${VOLUME_MOUNTPOINT}"
+		A_WORKDIR="${VOLUME_WORKDIR}"
 		# log "Running in folder: ${A_WORKDIR}"
 		shift
 		# log "Running image: ${IMAGE}:${TAG}"
